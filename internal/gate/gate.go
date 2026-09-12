@@ -9,13 +9,15 @@ import (
 	"strings"
 )
 
-const exemptBranch = "changeset-release/main"
+// VersionPRBranch is the single, always-reused branch the Version PR bot
+// maintains.
+const VersionPRBranch = "changeset-release/main"
 
 // IsExemptBranch reports whether branch is the Version PR bot's branch,
 // which is exempt from the changeset gate because it is itself the
 // commit that consumes accumulated changesets.
 func IsExemptBranch(branch string) bool {
-	return branch == exemptBranch
+	return branch == VersionPRBranch
 }
 
 // IsDocOnly reports whether every changed file is a markdown document.

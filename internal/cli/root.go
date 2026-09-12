@@ -1,6 +1,6 @@
 // Package cli wires the changeset subcommands (init, add, status,
-// version, publish) on top of cobra. Each RunE is a thin adapter onto
-// the internal/* packages that hold the actual logic.
+// version, publish, bot) on top of cobra. Each RunE is a thin adapter
+// onto the internal/* packages that hold the actual logic.
 package cli
 
 import (
@@ -23,6 +23,7 @@ func NewRootCmd(version string) *cobra.Command {
 	cmd.AddCommand(newStatusCmd())
 	cmd.AddCommand(newVersionCmd())
 	cmd.AddCommand(newPublishCmd())
+	cmd.AddCommand(newBotCmd())
 
 	return cmd
 }

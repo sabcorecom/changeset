@@ -56,7 +56,7 @@ func PrependRelease(path, version string, groups map[changeset.Bump][]string) er
 	var sb strings.Builder
 	sb.WriteString(changelogTitle)
 	sb.WriteString("\n\n")
-	sb.WriteString(formatSection(version, groups))
+	sb.WriteString(FormatSection(version, groups))
 	if existingBody != "" {
 		sb.WriteString("\n")
 		sb.WriteString(existingBody)
@@ -68,7 +68,10 @@ func PrependRelease(path, version string, groups map[changeset.Bump][]string) er
 	return nil
 }
 
-func formatSection(version string, groups map[changeset.Bump][]string) string {
+// FormatSection renders a single "## version" release section, grouped by
+// bump type into Major/Minor/Patch Changes, without touching any existing
+// CHANGELOG.md content.
+func FormatSection(version string, groups map[changeset.Bump][]string) string {
 	var sb strings.Builder
 	sb.WriteString("## " + version + "\n")
 

@@ -23,6 +23,17 @@ git tags — there is no `package.json`-style version file.
 - `changeset publish` — parse the top `## vX.Y.Z` header from
   `CHANGELOG.md`, create and push the matching git tag, then run
   `goreleaser release --clean`.
+- `changeset bot` — **CI-only**, not meant to be run manually. On a push
+  to the base branch: if `.changeset/*.md` files are accumulated,
+  regenerate the `changeset-release/main` branch (`changeset version`'s
+  bump, committed as `chore: version packages`, force-pushed) and open or
+  update the single Version PR on that branch; if none are accumulated,
+  the push is the just-merged Version PR itself, so run `changeset publish`
+  instead. Requires `GITHUB_TOKEN` (standard Actions token with
+  `contents: write` and `pull-requests: write`, no custom PAT) and
+  `GITHUB_REPOSITORY`, both of which a GitHub Actions workflow sets
+  automatically; it is invoked by the composite GitHub Action
+  (`sabcorecom/changeset/action@v1`), not run by hand.
 
 ## Building
 
