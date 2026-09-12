@@ -97,3 +97,35 @@ func PushTag(v string) error {
 	}
 	return nil
 }
+
+// CreateOrResetBranch checks out branch name, creating it if absent or
+// resetting it to HEAD if it already exists.
+func CreateOrResetBranch(name string) error {
+	if _, err := runGit("checkout", "-B", name); err != nil {
+		return fmt.Errorf("checkout branch %s: %w", name, err)
+	}
+	return nil
+}
+
+// CommitAll stages every change in the working tree and commits it with
+// message. There is no "nothing to commit" special-casing: callers only
+// invoke this after a real change, so an empty diff is a caller bug and
+// should surface as an error rather than be silently skipped.
+func CommitAll(message string) error {
+	if _, err := runGit("add", "-A"); err != nil {
+		return fmt.Errorf("stage changes: %w", err)
+	}
+	if _, err := runGit("commit", "-m", message); err != nil {
+		return fmt.Errorf("commit %q: %w", message, err)
+	}
+	return nil
+}
+
+// ForcePushBranch force-pushes the local branch name to the "origin"
+// remote's branch of the same name.
+func ForcePushBranch(name string) error {
+	if _, err := runGit("push", "--force", "origin", name+":"+name); err != nil {
+		return fmt.Errorf("force-push branch %s: %w", name, err)
+	}
+	return nil
+}

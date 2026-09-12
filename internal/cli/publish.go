@@ -3,13 +3,10 @@ package cli
 import (
 	"fmt"
 	"os"
-	"os/exec"
-	"path/filepath"
 
 	"github.com/spf13/cobra"
 
-	"github.com/sabcorecom/changeset/internal/changelog"
-	"github.com/sabcorecom/changeset/internal/gitutil"
+	"github.com/sabcorecom/changeset/internal/release"
 )
 
 func newPublishCmd() *cobra.Command {
@@ -22,28 +19,9 @@ func newPublishCmd() *cobra.Command {
 				return fmt.Errorf("get working directory: %w", err)
 			}
 
-			version, err := changelog.ParseTopVersion(filepath.Join(cwd, "CHANGELOG.md"))
+			version, err := release.Publish(cwd, cmd.OutOrStdout(), cmd.ErrOrStderr())
 			if err != nil {
 				return err
-			}
-
-			if err := gitutil.CreateTag(version); err != nil {
-				return err
-			}
-			if err := gitutil.PushTag(version); err != nil {
-				return err
-			}
-
-			if _, err := exec.LookPath("goreleaser"); err != nil {
-				return fmt.Errorf("goreleaser not found in PATH: %w", err)
-			}
-
-			releaseCmd := exec.Command("goreleaser", "release", "--clean")
-			releaseCmd.Dir = cwd
-			releaseCmd.Stdout = cmd.OutOrStdout()
-			releaseCmd.Stderr = cmd.ErrOrStderr()
-			if err := releaseCmd.Run(); err != nil {
-				return fmt.Errorf("run goreleaser: %w", err)
 			}
 
 			fmt.Fprintln(cmd.OutOrStdout(), "published", version)
