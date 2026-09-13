@@ -21,8 +21,11 @@ git tags — there is no `package.json`-style version file.
   `## vX.Y.Z` release section to `CHANGELOG.md` (grouped into Major/Minor/
   Patch Changes), and delete the consumed changeset files.
 - `changeset publish` — parse the top `## vX.Y.Z` header from
-  `CHANGELOG.md`, create and push the matching git tag, then run
-  `goreleaser release --clean`.
+  `CHANGELOG.md`, create and push the matching git tag, then — only if
+  the repo has a goreleaser config file (one of the paths goreleaser
+  itself looks for by default, e.g. `.goreleaser.yaml`) — run
+  `goreleaser release --clean`. Repos without a goreleaser config are
+  tagged and pushed without requiring goreleaser to be installed.
 - `changeset bot` — **CI-only**, not meant to be run manually. On a push
   to the base branch: if `.changeset/*.md` files are accumulated,
   regenerate the `changeset-release/main` branch (`changeset version`'s
@@ -79,9 +82,11 @@ Prerequisites the action does not provide, and the consumer must set up:
   history is required to compute the next version from git tags) and the
   default `persist-credentials: true` (needed to push the Version PR
   branch and, later, release tags).
-- If/when the publish path runs, `goreleaser` must already be installed
-  and configured in the job — this action does not install it (fails
-  fast with a clear error otherwise).
+- If/when the publish path runs and the repo has a goreleaser config
+  file, `goreleaser` must already be installed and configured in the
+  job — this action does not install it (fails fast with a clear error
+  otherwise). Repos with no goreleaser config skip this requirement
+  entirely.
 - The `concurrency` block shown above is recommended so two overlapping
   bot runs don't race on the same Version PR branch.
 
