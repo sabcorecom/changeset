@@ -1,0 +1,49 @@
+name: 'changeset'
+description: >-
+  Installs the changeset binary and runs the Version PR bot: opens or
+  updates the single Version PR on push, or publishes when that PR was
+  just merged.
+inputs:
+  github-token:
+    description: >-
+      Token used to open/update the Version PR. Defaults to the
+      workflow's automatic GITHUB_TOKEN.
+    required: false
+    default: ${{ github.token }}
+  version:
+    description: >-
+      git ref of github.com/sabcorecom/changeset to install via
+      `go install`. Defaults to the ref this action was invoked at.
+    required: false
+    default: ${{ github.action_ref }}
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        # Pinned to match this module's go.mod `go 1.25.0` directive;
+        # bump by hand if that directive changes.
+        go-version: '1.25'
+
+    - name: Install changeset
+      shell: bash
+      env:
+        ACTION_REF: ${{ inputs.version }}
+      run: go install "github.com/sabcorecom/changeset/cmd/changeset@${ACTION_REF}"
+
+    - name: Add GOBIN to PATH
+      shell: bash
+      run: echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+
+    - name: Configure git identity for the bot
+      shell: bash
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+
+    - name: Run changeset bot
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+      run: changeset bot
