@@ -86,13 +86,28 @@ Prerequisites the action does not provide, and the consumer must set up:
   file, `goreleaser` must already be installed and configured in the
   job — this action does not install it (fails fast with a clear error
   otherwise). Repos with no goreleaser config skip this requirement
-  entirely.
+  entirely. This repo's own `release.yml` (below) satisfies this via
+  `goreleaser/goreleaser-action` with `install-only: true`, run before
+  the action step.
 - The `concurrency` block shown above is recommended so two overlapping
   bot runs don't race on the same Version PR branch.
 
 The action only wraps `changeset bot`. The PR-gate check
 (`changeset status --since=origin/main`) is a separate CI step the
 consumer adds on their own, not part of this action.
+
+## Releasing this repository
+
+This repository dogfoods itself: `.github/workflows/release.yml` runs on
+every push to `main`, using a local `uses: ./action` reference (with
+`version: ${{ github.sha }}`, since there is no tagged `v1` yet) to run
+`changeset bot` — opening/updating the Version PR or publishing via
+`.goreleaser.yml` when that PR was just merged.
+`.github/workflows/pr-gate.yml` runs `changeset status --since=origin/main`
+on every pull request, checked out on its real head branch (`ref:
+${{ github.head_ref }}`) so the `changeset-release/main` branch exemption
+can actually match — same-repo PRs only, since a fork's branch isn't
+fetchable this way without additional cross-fork checkout wiring.
 
 ## Building
 
