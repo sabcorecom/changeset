@@ -3,6 +3,7 @@ package cli
 import (
 	"bytes"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strconv"
@@ -28,9 +29,24 @@ func withFakeGoreleaser(t *testing.T, exitCode int) {
 	t.Setenv("PATH", binDir+string(os.PathListSeparator)+os.Getenv("PATH"))
 }
 
+// pathWithGitOnly returns a PATH value that still resolves "git" (so
+// Publish's own git plumbing keeps working) but excludes every other
+// directory, in particular anywhere a real "goreleaser" binary might
+// live — so a test that succeeds under it actually proves goreleaser
+// was never looked up, not just that some binary happened to be missing.
+func pathWithGitOnly(t *testing.T) string {
+	t.Helper()
+	gitPath, err := exec.LookPath("git")
+	if err != nil {
+		t.Fatalf("locate git in PATH: %v", err)
+	}
+	return filepath.Dir(gitPath)
+}
+
 func TestPublishCmd_TagsAndRunsGoreleaser(t *testing.T) {
 	dir := initRepo(t)
 	writeRepoFile(t, dir, "CHANGELOG.md", "# Changelog\n\n## v0.1.0\n\n### Minor Changes\n\n- Add feature.\n")
+	writeRepoFile(t, dir, ".goreleaser.yaml", "")
 	gitCommit(t, dir, "add changelog")
 
 	withFakeGoreleaser(t, 0)
@@ -54,6 +70,7 @@ func TestPublishCmd_TagsAndRunsGoreleaser(t *testing.T) {
 func TestPublishCmd_FailsWithoutGoreleaserInPath(t *testing.T) {
 	dir := initRepo(t)
 	writeRepoFile(t, dir, "CHANGELOG.md", "# Changelog\n\n## v0.1.0\n\n### Patch Changes\n\n- Fix.\n")
+	writeRepoFile(t, dir, ".goreleaser.yaml", "")
 	gitCommit(t, dir, "add changelog")
 
 	emptyPathDir := t.TempDir()
@@ -67,6 +84,29 @@ func TestPublishCmd_FailsWithoutGoreleaserInPath(t *testing.T) {
 
 	if err := root.Execute(); err == nil {
 		t.Fatalf("expected error when goreleaser is missing from PATH")
+	}
+}
+
+func TestPublishCmd_SkipsGoreleaserWhenNoConfig(t *testing.T) {
+	dir := initRepo(t)
+	writeRepoFile(t, dir, "CHANGELOG.md", "# Changelog\n\n## v0.1.0\n\n### Patch Changes\n\n- Fix.\n")
+	gitCommit(t, dir, "add changelog")
+
+	t.Setenv("PATH", pathWithGitOnly(t))
+
+	root := NewRootCmd("test")
+	var out bytes.Buffer
+	root.SetOut(&out)
+	root.SetErr(&out)
+	root.SetArgs([]string{"publish"})
+
+	if err := root.Execute(); err != nil {
+		t.Fatalf("unexpected error: %v\n%s", err, out.String())
+	}
+
+	tagOut := runGitCmd(t, dir, "tag", "--list", "v0.1.0")
+	if tagOut == "" {
+		t.Fatalf("expected tag v0.1.0 to be created")
 	}
 }
 
