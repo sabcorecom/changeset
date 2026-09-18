@@ -1,0 +1,20 @@
+name: pr-gate
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  status:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+
+      - run: go run ./cmd/changeset status --since=origin/main

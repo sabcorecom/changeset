@@ -1,0 +1,25 @@
+version: 2
+
+project_name: changeset
+
+builds:
+  - id: changeset
+    main: ./cmd/changeset
+    binary: changeset
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w -X main.Version={{.Version}} -X main.Commit={{.Commit}} -X main.Date={{.Date}}
+
+checksum:
+  name_template: 'checksums.txt'
+
+changelog:
+  use: github-native
